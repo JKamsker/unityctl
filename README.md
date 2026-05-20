@@ -160,6 +160,8 @@ The API is kept simple, and leans mostly on the script execution to get work don
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical details
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Development setup
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+- [CLI reference](docs/cli/README.md) - Generated command reference
+- [CLI browser](docs/cli-browser/index.html) - Searchable single-file command browser
 
 A Claude Code skill is installed as part of `unityctl setup` and kept up to date by `unityctl update`. It teaches Claude how to use the CLI without consuming context window on every task.
 

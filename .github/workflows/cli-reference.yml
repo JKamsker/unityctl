@@ -1,0 +1,90 @@
+name: CLI Reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ '*' ]
+    paths:
+      - '.github/workflows/cli-reference.yml'
+      - 'UnityCtl.Cli/**'
+      - 'UnityCtl.Protocol/**'
+      - 'docs/cli/**'
+      - 'docs/cli-browser/**'
+      - 'Directory.Build.props'
+      - 'global.json'
+      - 'unityctl.slnx'
+      - 'README.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/cli-reference.yml'
+      - 'UnityCtl.Cli/**'
+      - 'UnityCtl.Protocol/**'
+      - 'docs/cli/**'
+      - 'docs/cli-browser/**'
+      - 'Directory.Build.props'
+      - 'global.json'
+      - 'unityctl.slnx'
+      - 'README.md'
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install InSpectra
+        run: dotnet tool update --global InSpectra.Gen --version 0.0.164 --add-source https://api.nuget.org/v3/index.json
+
+      - name: Restore
+        run: dotnet restore unityctl.slnx
+
+      - name: Build
+        run: dotnet build unityctl.slnx --configuration Release --no-restore
+
+      - name: Generate OpenCLI
+        run: >
+          inspectra generate dotnet UnityCtl.Cli/UnityCtl.Cli.csproj
+          --out "$RUNNER_TEMP/unityctl.opencli.json"
+          --overwrite
+          --configuration Release
+          --framework net10.0
+          --opencli-mode help
+          --command unityctl
+          --no-restore
+          --timeout 180
+
+      - name: Render Markdown
+        run: >
+          inspectra render file markdown "$RUNNER_TEMP/unityctl.opencli.json"
+          --layout hybrid
+          --split-depth 2
+          --out-dir docs/cli
+          --overwrite
+          --title "unityctl CLI"
+          --command-prefix unityctl
+
+      - name: Render HTML browser
+        run: >
+          inspectra render file html "$RUNNER_TEMP/unityctl.opencli.json"
+          --out-dir docs/cli-browser
+          --overwrite
+          --single-file
+          --compression-level 0
+          --title "unityctl CLI"
+          --command-prefix unityctl
+
+      - name: Normalize dynamic version
+        run: |
+          sed -i -E 's/^- Version: `[^`]+`$/- Version: generated from source/' docs/cli/README.md
+          sed -i -E 's/0\.10\.1\\u002B[0-9a-f]{40}/generated from source/g' docs/cli-browser/index.html
+          sed -i -E 's/0\.10\.1\+[0-9a-f]{40}/generated from source/g' docs/cli-browser/index.html
+
+      - name: Verify generated reference is current
+        run: git diff --exit-code -- docs/cli docs/cli-browser

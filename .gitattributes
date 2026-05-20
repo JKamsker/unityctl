@@ -3,3 +3,7 @@
 
 # Keep PowerShell scripts with CRLF (Windows convention)
 *.ps1 text eol=crlf
+
+# Generated documentation is verified on Linux in CI.
+docs/cli/**/*.md text eol=lf
+docs/cli-browser/index.html text eol=lf
